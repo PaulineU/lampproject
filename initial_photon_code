@@ -1,0 +1,70 @@
+// This #include statement was automatically added by the Particle IDE.
+#include "SparkTime/SparkTime.h"
+
+//CHECK LATER: https://docs.particle.io/reference/firmware/photon/#time
+
+// This #include statement was automatically added by the Particle IDE.
+#include "neopixel/neopixel.h"
+#include "application.h"
+int offtrue = 0;
+SYSTEM_MODE(AUTOMATIC);
+
+// IMPORTANT: Set pixel COUNT, PIN and TYPE
+#define PIXEL_PIN D6
+#define PIXEL_COUNT 24
+#define PIXEL_TYPE WS2812B
+#define ONE_DAY_MILLIS (24 * 60 * 60 * 1000)
+unsigned long lastSync = millis();
+
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE);
+
+void setup()
+{
+  strip.begin();
+  strip.show(); // Initialize all pixels to 'off'
+  Particle.function("lamp",turnOn);
+}
+void loop()
+{
+    if (millis() - lastSync > ONE_DAY_MILLIS) {
+    // Request time synchronization from the Particle Cloud
+    Particle.syncTime();
+    lastSync = millis();
+    }
+}
+
+
+int turnOn(String command) {
+    if (command=="on")
+    {
+        offtrue = 0;
+        for (int i=0; i<50; i++)
+        {
+            for (int j=0; j<strip.numPixels(); j++)
+            {
+                strip.setPixelColor(j, strip.Color(i, i, i));
+            }
+            strip.show();
+            delay(100);
+            if (offtrue==1)
+            {
+                break;
+            }
+        }
+        return 1;
+    }
+    else if (command=="off")
+    {
+        offtrue = 1;
+        for(int i=0; i<strip.numPixels(); i++)
+        {
+            strip.setPixelColor(i, strip.Color(0, 0, 0));
+        }
+        strip.show();
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
+}
